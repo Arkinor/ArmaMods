@@ -1,0 +1,5 @@
+class BIS_AddonInfo
+{
+	author="ichig";
+	timepacked="1755803999";
+};
