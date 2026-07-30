@@ -31,7 +31,7 @@ BSO_Item_Arrays = [
     "Land_MedicalTent_01_NATO_tropic_generic_outer_F"
 
 ];
-BSO_System_PlaySounds = compile preprocessFileLineNumbers "\BSO_System\createSoundGlobal.sqf";
+BSO_System_PlaySounds = compile preprocessFileLineNumbers "\BSOSystem\createSoundGlobal.sqf";
 
 
 
@@ -211,7 +211,9 @@ BSO_System_fnc_Deactivate_Invis = {
 	[_unit] remoteExec ["BSO_System_fnc_RemoveInvisParticles", 0, false];
 	
 	_unit setCaptive false;
-	_unit allowDamage true;
+	if !(_unit getVariable ["BSO_System_Stimulator_Activ", false]) then {
+		_unit allowDamage true;
+	};
 	[_unit, false] remoteExec ["hideObjectGlobal", 2, false];
 	
 	_unit setVariable ["BSO_System_Invis_Active", false, true];
@@ -479,21 +481,205 @@ BSO_System_fnc_Open_Vehicle = {
 
 
 
+BSO_System_fnc_RequestEvacLAAT = {
+    if (!hasInterface || {isNull player} || {!alive player}) exitWith {};
+    if !(player getVariable ["BSO_System_LAAT_Act_Active", true]) exitWith {
+        hint "Эвакуационный LAAT ещё не готов";
+    };
+    private _hasNexusAccess = if (!isNil "BSO_Cards_Array" && {count BSO_Cards_Array > 5}) then {
+        ((BSO_Cards_Array select 0) in items player) ||
+        ((BSO_Cards_Array select 4) in items player) ||
+        ((BSO_Cards_Array select 5) in items player)
+    } else {
+        false
+    };
+    if (!_hasNexusAccess) exitWith { hint "Нет доступа к эвакуационному LAAT"; };
+    if (missionNamespace getVariable ["BSO_System_LAAT_MapSelectionPending", false]) exitWith {
+        hint "Сначала завершите выбор точки эвакуации";
+    };
 
+    missionNamespace setVariable ["BSO_System_LAAT_MapSelectionPending", true, false];
+    hint "Укажите на карте точку высадки. Закройте карту для отмены.";
+    openMap true;
+    private _handlerId = addMissionEventHandler ["MapSingleClick", {
+        params ["_units", "_pos"];
+        if !(missionNamespace getVariable ["BSO_System_LAAT_MapSelectionPending", false]) exitWith {};
+        missionNamespace setVariable ["BSO_System_LAAT_MapSelectionPending", false, false];
+        private _id = missionNamespace getVariable ["BSO_System_LAAT_MapHandler", -1];
+        if (_id >= 0) then { removeMissionEventHandler ["MapSingleClick", _id]; };
+        missionNamespace setVariable ["BSO_System_LAAT_MapHandler", -1, false];
+        openMap false;
+        
+        
+        
+        [player, 1, "mti_armoury_vehicles_laati_mk2", _pos] call BSO_System_fnc_Laat;
+        hint "Запрос передан. LAAT следует к вашей позиции.";
+    }];
+    missionNamespace setVariable ["BSO_System_LAAT_MapHandler", _handlerId, false];
+
+    [_handlerId] spawn {
+        params ["_id"];
+        waitUntil {
+            uiSleep 0.2;
+            !visibleMap || !(missionNamespace getVariable ["BSO_System_LAAT_MapSelectionPending", false])
+        };
+        if (missionNamespace getVariable ["BSO_System_LAAT_MapSelectionPending", false]) then {
+            missionNamespace setVariable ["BSO_System_LAAT_MapSelectionPending", false, false];
+            removeMissionEventHandler ["MapSingleClick", _id];
+            missionNamespace setVariable ["BSO_System_LAAT_MapHandler", -1, false];
+            hint "Вызов LAAT отменён";
+        };
+    };
+};
 
 BSO_System_fnc_Laat = {
-    params ["_unit", "_evac","_vechical"];
+    params ["_unit", "_evac", "_vechical", ["_dropPos", [], [[]]]];
     if (!isServer) exitWith {
-        _this remoteExecCall ["BSO_System_fnc_Laat", 2];
+        _this remoteExec ["BSO_System_fnc_Laat", 2];
     };
     if (isNull _unit || {!isPlayer _unit}) exitWith {};
-    if (remoteExecutedOwner > 0 && {owner _unit != remoteExecutedOwner}) exitWith {
-        diag_log format ["[BSO LAAT] rejected spoofed requester remote=%1", remoteExecutedOwner];
+    private _remoteOwner = if (isNil "remoteExecutedOwner") then { 2 } else { remoteExecutedOwner };
+    if (_remoteOwner > 2 && {owner _unit != _remoteOwner}) exitWith {
+        diag_log format ["[BSO LAAT] rejected spoofed requester remote=%1", _remoteOwner];
     };
-    if (!(_vechical isEqualType "") || {!isClass (configFile >> "CfgVehicles" >> _vechical)}) exitWith {};
+    if !(_vechical isEqualType "") exitWith {};
+    if !(isClass (configFile >> "CfgVehicles" >> _vechical)) exitWith {
+        diag_log format ["[BSO LAAT] vehicle class is missing: %1", _vechical];
+        format ["Класс техники %1 не найден. Проверьте подключение мода с LAAT.", _vechical] remoteExecCall ["hint", owner _unit];
+    };
     if !(_vechical in BSO_LAAT_AllowedClasses) exitWith {
         diag_log format ["[BSO LAAT] rejected class %1", _vechical];
     };
+
+    if (_evac isEqualTo 1 && {_dropPos isEqualType []} && {count _dropPos >= 2}) exitWith {
+        private _cards = if (!isNil "BSO_Cards_Array") then { BSO_Cards_Array } else { [] };
+        private _hasAccess = count _cards > 5 && {
+            ((_cards select 0) in items _unit) ||
+            ((_cards select 4) in items _unit) ||
+            ((_cards select 5) in items _unit)
+        };
+        if (!_hasAccess) exitWith {
+            diag_log format ["[BSO LAAT] access denied uid=%1", getPlayerUID _unit];
+        };
+        if (!((_dropPos select 0) isEqualType 0) || {!((_dropPos select 1) isEqualType 0)}) exitWith {
+            diag_log format ["[BSO LAAT] invalid drop position uid=%1", getPlayerUID _unit];
+        };
+        private _worldSize = worldSize;
+        if ((_dropPos select 0) < 0 || {(_dropPos select 1) < 0} || {(_dropPos select 0) > _worldSize} || {(_dropPos select 1) > _worldSize}) exitWith {
+            diag_log format ["[BSO LAAT] out-of-bounds drop position uid=%1 pos=%2", getPlayerUID _unit, _dropPos];
+        };
+        if !(_unit getVariable ["BSO_System_LAAT_Act_Active", true]) exitWith {};
+
+        _unit setVariable ["BSO_System_LAAT_Act_Active", false, true];
+        private _pickupPos = getPosATL _unit;
+        private _spawnPos = _pickupPos getPos [1800, random 360];
+        _spawnPos set [2, 140];
+        private _heli = createVehicle [_vechical, _spawnPos, [], 0, "FLY"];
+        if (isNull _heli) exitWith {
+            _unit setVariable ["BSO_System_LAAT_Act_Active", true, true];
+            "Не удалось создать эвакуационный LAAT" remoteExecCall ["hint", owner _unit];
+        };
+
+        createVehicleCrew _heli;
+        private _driver = driver _heli;
+        if (isNull _driver) exitWith {
+            deleteVehicle _heli;
+            _unit setVariable ["BSO_System_LAAT_Act_Active", true, true];
+            "У эвакуационного LAAT нет экипажа" remoteExecCall ["hint", owner _unit];
+        };
+
+        private _heliGroup = group _driver;
+        _heliGroup setBehaviour "CARELESS";
+        _heliGroup setCombatMode "BLUE";
+        _heli setVariable ["BSO_System_LAAT_Unit_Owner", _unit, true];
+        _heli setVariable ["BSO_System_LAAT_Destroy", false, true];
+        _heli setVariable ["BSO_System_LAAT_Distance_While", true, true];
+        _unit setVariable ["BSO_System_LAAT", _heli, true];
+
+        private _pickupWp = _heliGroup addWaypoint [_pickupPos, 0];
+        _pickupWp setWaypointType "MOVE";
+        _pickupWp setWaypointSpeed "FULL";
+        _pickupWp setWaypointBehaviour "CARELESS";
+        _pickupWp setWaypointCompletionRadius 120;
+
+        private _arrivalDeadline = time + 240;
+        waitUntil {
+            sleep 1;
+            isNull _heli || {!alive _heli} || {!alive _unit} || {_heli distance2D _pickupPos < 180} || {time >= _arrivalDeadline}
+        };
+        if (isNull _heli || {!alive _heli} || {!alive _unit} || {time >= _arrivalDeadline}) exitWith {
+            if (!isNull _heli) then { { deleteVehicle _x; } forEach crew _heli; deleteVehicle _heli; };
+            deleteGroup _heliGroup;
+            _unit setVariable ["BSO_System_LAAT", nil, true];
+            [{ params ["_u"]; if (!isNull _u) then { _u setVariable ["BSO_System_LAAT_Act_Active", true, true]; }; }, [_unit], 120] call CBA_fnc_waitAndExecute;
+        };
+
+        _heli land "GET IN";
+        private _landingDeadline = time + 90;
+        waitUntil {
+            sleep 1;
+            isNull _heli || {!alive _heli} || {isTouchingGround _heli} || {(getPosATL _heli select 2) < 2.5} || {time >= _landingDeadline}
+        };
+        if (isNull _heli || {!alive _heli}) exitWith {
+            if (!isNull _heli) then { { deleteVehicle _x; } forEach crew _heli; deleteVehicle _heli; };
+            deleteGroup _heliGroup;
+            _unit setVariable ["BSO_System_LAAT", nil, true];
+            [{ params ["_u"]; if (!isNull _u) then { _u setVariable ["BSO_System_LAAT_Act_Active", true, true]; }; }, [_unit], 120] call CBA_fnc_waitAndExecute;
+        };
+
+        _heli setVariable ["BSO_System_LAAT_Distance_While", false, true];
+        "Эвакуационный LAAT прибыл. Займите место, ожидание — 120 секунд." remoteExecCall ["hint", owner _unit];
+        private _boardingDeadline = time + 120;
+        waitUntil {
+            sleep 1;
+            isNull _heli || {!alive _heli} || {!alive _unit} || {vehicle _unit isEqualTo _heli} || {time >= _boardingDeadline}
+        };
+        if (isNull _heli || {!alive _heli} || {!alive _unit} || {vehicle _unit != _heli}) exitWith {
+            if (!isNull _heli) then { { deleteVehicle _x; } forEach crew _heli; deleteVehicle _heli; };
+            deleteGroup _heliGroup;
+            _unit setVariable ["BSO_System_LAAT", nil, true];
+            [{ params ["_u"]; if (!isNull _u) then { _u setVariable ["BSO_System_LAAT_Act_Active", true, true]; }; }, [_unit], 120] call CBA_fnc_waitAndExecute;
+        };
+
+        _heli land "NONE";
+        private _drop = +_dropPos;
+        _drop set [2, 0];
+        private _dropWp = _heliGroup addWaypoint [_drop, 0];
+        _dropWp setWaypointType "MOVE";
+        _dropWp setWaypointSpeed "FULL";
+        _dropWp setWaypointBehaviour "CARELESS";
+        _dropWp setWaypointCompletionRadius 120;
+
+        private _dropDeadline = time + 300;
+        waitUntil {
+            sleep 1;
+            isNull _heli || {!alive _heli} || {_heli distance2D _drop < 180} || {time >= _dropDeadline}
+        };
+        if (!isNull _heli && {alive _heli}) then {
+            _heli land "GET OUT";
+            private _touchdownDeadline = time + 90;
+            waitUntil {
+                sleep 1;
+                isNull _heli || {!alive _heli} || {isTouchingGround _heli} || {(getPosATL _heli select 2) < 2.5} || {time >= _touchdownDeadline}
+            };
+            if (!isNull _heli && {alive _heli}) then {
+                "Точка высадки достигнута. Покиньте LAAT." remoteExecCall ["hint", owner _unit];
+                sleep 45;
+                { if (isPlayer _x) then { moveOut _x; }; } forEach crew _heli;
+                { deleteVehicle _x; } forEach crew _heli;
+                deleteVehicle _heli;
+            };
+        };
+        if (!isNull _heli) then {
+            { if (isPlayer _x) then { moveOut _x; }; } forEach crew _heli;
+            { deleteVehicle _x; } forEach crew _heli;
+            deleteVehicle _heli;
+        };
+        deleteGroup _heliGroup;
+        _unit setVariable ["BSO_System_LAAT", nil, true];
+        [{ params ["_u"]; if (!isNull _u) then { _u setVariable ["BSO_System_LAAT_Act_Active", true, true]; }; }, [_unit], 500] call CBA_fnc_waitAndExecute;
+    };
+
     _pos = getPos _unit;
     _unit setVariable ["BSO_System_LAAT_Act_Active", false];
     private _spawnDist = if (_evac == 1) then { 20000 } else { 1000 };
@@ -1359,52 +1545,65 @@ BSO_System_fnc_AutoAim_Toggle = {
     };
 };
 
-/*
-fnc_BSO_Meditatia_Act = {
-    if (player getVariable "Meditatia" == false) then {
-    player say3D "ACE_hit_Male06ENG_high_1";
-    player enableFatigue false;
-    player setCustomAimCoef 0;
 
-        player setVariable ["Meditatia", true];
-        hint "Тренировки помогают вам сосредоточиться";
 
-        [{
-            player enableFatigue true;
-            player setCustomAimCoef 3;
-            player setVariable ["Meditatia", false];
-        }, [], 60] call CBA_fnc_waitAndExecute;
-    };
-};
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 BSO_System_fnc_Stimulator_Act = {
     params ["_timerCD"];
-    _player = player;
-    _player setVariable ["BSO_System_Stimulator_Activ", true];
-    _cooldownArmorArc = _player getVariable ["cooldownArmorArc", 0];
-    _timerUpTime = 45;
-    _healInterval = 5; // Интервал между хилами (сек). Раньше было 1 — из-за этого каждую секунду обновлялось состояние ACE и игрок дёргался при ходьбе.
-    
-    if (_cooldownArmorArc == 0) then {
-        _player say3D "ACE_hit_Male06ENG_high_1";
-        _endUptimeArmor = time + _timerUpTime;
-        _player setVariable ["cooldownArmorArc", _timerCD];
-        
-        while { time <= _endUptimeArmor && alive _player } do {
-            sleep _healInterval;
-            if (alive _player) then {
-                [_player] call ace_medical_treatment_fnc_fullHealLocal;
-            };
+    if (!hasInterface || {isNull player} || {!alive player}) exitWith {};
+
+    private _player = player;
+    private _cooldown = (_timerCD max 30) min 3600;
+    if ((_player getVariable ["cooldownArmorArc", 0]) > 0) exitWith {
+        hint "Стимулятор ещё не готов";
+    };
+    if (_player getVariable ["BSO_System_Stimulator_Activ", false]) exitWith {};
+
+    private _wasDamageAllowed = isDamageAllowed _player;
+    private _endTime = time + 45;
+    _player setVariable ["cooldownArmorArc", _cooldown, false];
+    _player setVariable ["BSO_System_Stimulator_Activ", true, true];
+    _player allowDamage false;
+    _player say3D "ACE_hit_Male06ENG_high_1";
+    [_player] call ace_medical_treatment_fnc_fullHealLocal;
+    hint "Стимулятор активирован: неуязвимость на 45 секунд";
+
+    while {alive _player && {time < _endTime} && {_player getVariable ["BSO_System_Stimulator_Activ", false]}} do {
+        sleep 3;
+        if (alive _player) then {
+            [_player] call ace_medical_treatment_fnc_fullHealLocal;
         };
-        
-        _player setVariable ["BSO_System_Stimulator_Activ", nil];
-        hint format ["Стимулятор не используется, идёт КД %1", _timerCD];
-        
-        for [{ private _i = _timerCD }, { _i >= 0 }, { _i = _i - 1 }] do {
-            sleep 1;
-            _player setVariable ["cooldownArmorArc", _i];
-        };
+    };
+
+    if (!isNull _player) then {
+        _player allowDamage _wasDamageAllowed;
+        _player setVariable ["BSO_System_Stimulator_Activ", false, true];
+    };
+    hint format ["Действие стимулятора завершено. Перезарядка: %1 сек.", _cooldown];
+
+    for "_remaining" from _cooldown to 1 step -1 do {
+        if (isNull _player) exitWith {};
+        _player setVariable ["cooldownArmorArc", _remaining, false];
+        sleep 1;
+    };
+    if (!isNull _player) then {
+        _player setVariable ["cooldownArmorArc", 0, false];
     };
 };
 
@@ -1442,10 +1641,3 @@ BSO_System_AdvancedArmour_Heal = {
 	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {};
 	[_pl,"BSO_System_Swing_1",5] spawn BSO_System_PlaySounds;
 };
-
-
-
-
-
-
-

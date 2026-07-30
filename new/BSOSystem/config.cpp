@@ -4,14 +4,14 @@ class CfgPatches
 	{
 		units[]={};
 		weapons[]={
-			"BSO_System_ids_SOB",                  		//0
-			"BSO_System_ids_RC",                    	//1
-    		"BSO_System_ids_ARF",                       //2
-    		"BSO_System_ids_ARC",                       //3 
-			"BSO_System_General_Zey",                   //4
-            "BSO_System_ids_RC_Nexus",                  //5
-            "BSO_System_ids_Dark",                      //6
-            "BSO_System_ids_Henker"                     //7
+			"BSO_System_ids_SOB",                  		
+			"BSO_System_ids_RC",                    	
+    		"BSO_System_ids_ARF",                       
+    		"BSO_System_ids_ARC",                       
+			"BSO_System_General_Zey",                   
+            "BSO_System_ids_RC_Nexus",                  
+            "BSO_System_ids_Dark",                      
+            "BSO_System_ids_Henker"                     
 		};
 		requiredVersion=0.1;
 		requiredAddons[]={
@@ -27,7 +27,7 @@ class CfgSounds
 		name="BSO_System__armor_TakingBattery";
 		sound[]=
 		{
-			"\BSO_System\sounds\armor_TakingBattery.ogg",
+			"\BSOSystem\sounds\armor_TakingBattery.ogg",
 			2.2387211,
 			1
 		};
@@ -38,7 +38,7 @@ class CfgSounds
 		name="BSO_System_useSyringe";
 		sound[]=
 		{
-			"\BSO_System\sounds\medkit.ogg",
+			"\BSOSystem\sounds\medkit.ogg",
 			3.1622777,
 			1
 		};
@@ -49,7 +49,7 @@ class CfgSounds
 		name="BSO_System_openSyringe";
 		sound[]=
 		{
-			"\BSO_System\sounds\medkit_open.ogg",
+			"\BSOSystem\sounds\medkit_open.ogg",
 			3.1622777,
 			1
 		};
@@ -82,7 +82,7 @@ class CfgGesturesMale
 		{
 			speed=-2.4000001;
 			looped=0;
-			file="\BSO_System\anims\Exo_Gest_Heal.rtm";
+			file="\BSOSystem\anims\Exo_Gest_Heal.rtm";
 			mask="handsWeapon";
 			headBobStrength=-1;
 			headBobMode=4;
@@ -149,21 +149,21 @@ class CfgVehicles
 				statement="player setVariable ['BSO_System_Auto_Heal_Active', false];";
 				};	
 				
-			/*
-			class BSO_System_fnc_BSO_Meditatia_Act
-				{
-				displayName="Сосредоточиться и успокоится на минуту";
-				priority=0;
-				radius=5;
-				position="";
-				showWindow=0;
-				hideOnUse=1;
-				onlyForPlayer=0;
-				shortcut="";
-				condition="(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive player) && (player getVariable 'Meditatia' == false) && (BSO_Cards_Array select 2 in items player)";
-				statement="[] spawn fnc_BSO_Meditatia_Act;";
-				};
-			*/		
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
 			
             class BSO_System_SpeedUp
 				{
@@ -175,7 +175,7 @@ class CfgVehicles
 				hideOnUse=1;
 				onlyForPlayer=0;
 				shortcut="";
-                condition="(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive this) && ((this getVariable ['bigspeed', false]) == false) && ((BSO_Cards_Array select 2 in items player) or (BSO_Cards_Array select 1 in items player) or (BSO_Cards_Array select 5 in items player))";
+                condition="(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive this) && ((this getVariable ['bigspeed', false]) == false) && ((BSO_Cards_Array select 2 in items player) or (BSO_Cards_Array select 1 in items player) or (BSO_Cards_Array select 5 in items player) or (getPlayerUID player == '76561198183586917'))";
 				statement="[] spawn fnc_BSO_Speed_Act;";				
 				};	
 
@@ -189,7 +189,7 @@ class CfgVehicles
 				hideOnUse=1;
 				onlyForPlayer=0;
 				shortcut="";
-                condition="(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive this) && ((this getVariable ['bigspeed', false]) == true) && ((BSO_Cards_Array select 2 in items player) or (BSO_Cards_Array select 1 in items player) or (BSO_Cards_Array select 5 in items player))";
+                condition="(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive this) && ((this getVariable ['bigspeed', false]) == true) && ((BSO_Cards_Array select 2 in items player) or (BSO_Cards_Array select 1 in items player) or (BSO_Cards_Array select 5 in items player) or (getPlayerUID player == '76561198183586917'))";
 				statement="[] spawn fnc_BSO_Speed_Act;";			
 				};
 
@@ -228,13 +228,13 @@ class CfgVehicles
 			{
 				displayName="БСО";
 				condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 7 in items player))";
-				icon = "\BSO_System\data\bso.paa";
+				icon = "\BSOSystem\data\bso.paa";
 				insertChildren = "_this call BSO_System_fnc_Vehicle_Defender";
 			
 				class BSO_System_Drones
 				{
 					displayName = "Дроны";
-					condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player))";
+					condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 5 in items player))";
 					exceptions[] = {};
                     icon = "";					
 				
@@ -254,32 +254,32 @@ class CfgVehicles
 						statement = "['mti_armoury_drones_mse_Spyro'] spawn BSO_System_fnc_Vehicle_spawn;";
 						icon = "";					
 					};
-					/*
-					class BSO_System_Turel_Dron
-					{
-						displayName = "Собрать противопехотную турель";
-						condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player))";
-						exceptions[] = {};
-						statement = "['mti_armoury_drones_blasterturret_base'] spawn BSO_System_fnc_Vehicle_spawn;";
-						icon = "";					
-					};
-					class BSO_System_aa_Turel_Dron
-					{
-						displayName = "Собрать противовоздушную турель";
-						condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player))";
-						exceptions[] = {};
-						statement = "['mti_armoury_drones_paap_aa'] spawn BSO_System_fnc_Vehicle_spawn;";
-						icon = "";					
-					};
-					class BSO_System_at_Turel_Dron
-					{
-						displayName = "Собрать Противотанковую турель";
-						condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player))";
-						exceptions[] = {};
-						statement = "['mti_armoury_drones_paap_at'] spawn BSO_System_fnc_Vehicle_spawn;";
-						icon = "";					
-					};
-					*/
+					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 				};
 
 				class Open_Vehicle
@@ -359,38 +359,36 @@ class CfgVehicles
 				class BSO_System_vehicle_ACE_act
 				{
 					displayName = "Вызов техники";
-					condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player))";
-                    icon = "\BSO_System\data\laat_ui_black.paa";	
+					condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 5 in items player))";
+                    icon = "\BSOSystem\data\laat_ui_black.paa";	
 					insertChildren = "_this call BSO_System_fnc_Vehicle_jedi_card_act;";	
-					/*
 					class BSO_System_Laat_Evac
 					{
 						displayName = "Вызвать эвакуационный LAAT";
-						condition = "(player getVariable 'BSO_System_LAAT_Act_Active' == true) && ((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player))";
+						condition = "(player getVariable ['BSO_System_LAAT_Act_Active', true]) && ((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 5 in items player))";
 						exceptions[] = {};
-						statement = "[player, 1, 'mti_armoury_vehicles_laati_mk2'] spawn BSO_System_fnc_Laat";
+						statement = "[] call BSO_System_fnc_RequestEvacLAAT";
 						icon = "";					
 					};
-					*/
 					class BSO_System_Var_Drone
 					{
 						displayName = "Вызвать боевой дрон";
 						condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player)) && ('ACE_UAVBattery' in items player)";
 						exceptions[] = {};
-						statement = "player removeItem 'ACE_UAVBattery'; [player, 1, 'B_T_arf_drone_dynemic_Loadout_F'] spawn BSO_System_fnc_Laat;";
+						statement = "player removeItem 'ACE_UAVBattery'; [player, 0, 'B_T_arf_drone_dynemic_Loadout_F'] spawn BSO_System_fnc_Laat;";
 						icon = "";					
 					};
 
-					/*
-					class BSO_System_Remove_LAAT_Crew
-					{
-						displayName = "Высадить экипаж ЛААТ";
-						condition = "(!(isNil {player getVariable 'BSO_System_LAAT'})) && (alive (player getVariable 'BSO_System_LAAT')) && ((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player))";
-						exceptions[] = {};
-						statement = "[] spawn BSO_System_fnc_remove_laat_crew;";
-						icon = "";					
-					}; 
-					*/
+					
+
+
+
+
+
+
+
+
+
 
 					class BSO_System_delete_vehicle
 					{
@@ -452,16 +450,16 @@ class CfgVehicles
 						icon = "";
 					};
 				};
-				/*
-				class BSO_System_Personality_Scaner
-				{
-					displayName = "Сканировать личность";
-					condition = "(player getVariable ['BSO_System_Personality_Scaner_Activ', true]) && (BSO_Cards_Array select 0 in items player)";
-					exceptions[] = {};
-					statement = "[] spawn BSO_System_fnc_Personality_Scaner;";
-                    icon = "";					
-				};
-				*/
+				
+
+
+
+
+
+
+
+
+
 				class BSO_System_Artillery_Strike
 				{
 					displayName = "<t color='#ff0000'>Вызвать артподдержку</t>";
@@ -476,7 +474,7 @@ class CfgVehicles
 			{
 				displayName = "Маскировочные фортификации";
 				condition = "('ACE_Fortify' in items player)";
-				icon = "\BSO_System\data\bacta_ui_green.paa";	
+				icon = "\BSOSystem\data\bacta_ui_green.paa";	
 				insertChildren = "_this call BSO_System_fnc_spawner_items_act;";
 				
 				class BSO_System_Remove_Tent
@@ -544,7 +542,7 @@ class CfgFunctions
 	{
 		class Artillery
 		{
-			file = "\BSO_System\functions";
+			file = "\BSOSystem\functions";
 			class selectArtilleryTarget {};
 			class artilleryStrike {};
 			class healGrenade {};
@@ -557,7 +555,7 @@ class Extended_PreInit_EventHandlers
 {
 	class BSO_System_PreInit
 	{
-		init="call compile preprocessFileLineNumbers '\BSO_System\XEH_preInit.sqf'";
+		init="call compile preprocessFileLineNumbers '\BSOSystem\XEH_preInit.sqf'";
 	};
 };
 
@@ -565,6 +563,6 @@ class Extended_PostInit_EventHandlers
 {
 	class BSO_System_PostInit
 	{
-		init="call compile preprocessFileLineNumbers '\BSO_System\XEH_postInit.sqf'";
+		init="call compile preprocessFileLineNumbers '\BSOSystem\XEH_postInit.sqf'";
 	};
 };
