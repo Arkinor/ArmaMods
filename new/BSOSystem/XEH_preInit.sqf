@@ -1,3 +1,4 @@
+//МАССИВЫ
 BSO_Cards_Array = [ 
     "BSO_System_ids_SOB",
     "BSO_System_ids_RC",
@@ -8,8 +9,6 @@ BSO_Cards_Array = [
     "BSO_System_ids_Dark",
     "BSO_System_ids_Henker"
 ];
-
-
 
 BSO_Vehicle_Array = [
     "mti_armoury_vehicles_laati_mk2"
@@ -31,10 +30,13 @@ BSO_Item_Arrays = [
     "Land_MedicalTent_01_NATO_tropic_generic_outer_F"
 
 ];
+
+//КОМПИЛИРУЕМ ЗВУКИ ЁПТ
 BSO_System_PlaySounds = compile preprocessFileLineNumbers "\BSOSystem\createSoundGlobal.sqf";
 
 
-
+//ФУНКЦИИ
+//ВООБЩЕ НЕ ЕБУ ЧТО ЭТО ЗА ХУЕТА, НО КОГДА УЗНАЮ, ВОЗМОЖНО ПОПРАВЛЮ, УДАЛЮ ИЛИ ЕЩЁ КАКИЕ УЖАСНЫЕ ВЕЩИ СДЕЛАЮ С ЭТОЙ ЗАЛУПКОЙ
 BSO_System_fnc_GrenadeDamageVehicle = {
 	params ["_vehicle"];
 	if (isNull _vehicle || {!(_vehicle isKindOf "LandVehicle") && !(_vehicle isKindOf "Air") && !(_vehicle isKindOf "Ship")}) exitWith {};
@@ -65,6 +67,7 @@ BSO_System_fnc_GrenadeDamageVehicle = {
 	if (damage _vehicle < 0.85) then { _vehicle setDamage 0.85 };
 };
 
+//МОЯ ЗАЛУПА ПЕРЕЁБАНАЯ ДОНАТНЫМИ СКРИПТАМИ, НУ ДА ХУЙ С НИМИ, БЕЗ ИЗМЕНЕНИЙ.
 BSO_System_fnc_Proverka_Delete_Ids = {
 	if ((name _this find 'ARF' != -1)
 	or (name _this find 'ARC' != -1)
@@ -83,222 +86,7 @@ BSO_System_fnc_Proverka_Delete_Ids = {
 	} forEach (items player);
 };
 
-BSO_System_fnc_Activate_Invis = {
-	params ["_unit"];
-	if (isNull _unit || !alive _unit) exitWith {};
-	
-	private _maxEnergy = _unit getVariable ["BSO_System_Invis_Energy_Max", 3000];
-	private _energy    = _unit getVariable ["BSO_System_Invis_Energy", _maxEnergy];
-	private _minToActivate = 0.2 * _maxEnergy;
-
-	if (_energy < _minToActivate) exitWith {
-		hint format ["Недостаточно энергии инвиза: %1%% (нужно минимум %2%%)", round (_energy / _maxEnergy * 100), round (_minToActivate / _maxEnergy * 100)];
-	};
-
-	private _autoDeactivateTime = _unit getVariable ["BSO_System_Invis_AutoDeactivateTime", 0];
-	private _cooldownTime = 30;
-	private _timeSinceDeactivate = time - _autoDeactivateTime;
-	if (_timeSinceDeactivate < _cooldownTime) then {
-		private _remaining = _cooldownTime - _timeSinceDeactivate;
-		hint format ["Инвиз на перезарядке! Осталось: %1 сек", round _remaining];
-	} else {
-		[_unit] remoteExec ["BSO_System_fnc_RemoveInvisParticles", 0, false];
-		
-		_unit setCaptive true;
-		[_unit, true] remoteExec ["hideObjectGlobal", 2, false];
-
-		_unit setVariable ["BSO_System_Invis_Active", true, true];
-
-		[_unit] remoteExec ["BSO_System_fnc_CreateInvisParticles", 0, false];
-
-		hint "Инвиз активирован";
-		
-		_unit call BSO_System_fnc_Update_Invis_Actions;
-	};
-};
-
-BSO_System_fnc_CreateInvisParticles = {
-	params ["_unit"];
-	if (isNull _unit || !alive _unit) exitWith {};
-	
-	private _oldEffects = _unit getVariable ["BSO_System_SmokeEffect", []];
-	if (typeName _oldEffects == "ARRAY") then {
-		{
-			if (!isNull _x) then {
-				deleteVehicle _x;
-			};
-		} forEach _oldEffects;
-	} else {
-		if (!isNull _oldEffects) then {
-			deleteVehicle _oldEffects;
-		};
-	};
-	
-	private _effects = [];
-	
-	for "_i" from 0 to 10 do {
-		private _heightOffset = (_i - 5) * 0.2;
-		
-		private _snowEffect = "#particlesource" createVehicleLocal (getPosATL _unit);
-		_snowEffect setParticleParams [
-			["\A3\data_f\ParticleEffects\Universal\Universal", 16, 12, 8],
-			"",
-			"Billboard",
-			1,
-			0.3,
-			[0, 0, _heightOffset],
-			[0, 0, -0.2],
-			1,
-			0.1,
-			0.1,
-			0,
-			[0.05, 0.1, 0.15],
-			[
-				[1, 1, 1, 1],
-				[0.95, 0.95, 0.95, 0.8],
-				[0.9, 0.9, 0.9, 0.5],
-				[0.85, 0.85, 0.85, 0.2],
-				[1, 1, 1, 0]
-			],
-			[1],
-			0,
-			0,
-			"",
-			"",
-			_unit
-		];
-		_snowEffect setParticleRandom [
-			0.3,
-			[0.3, 0.3, 0.1],
-			[0.1, 0.1, 0.05],
-			0.2,
-			0.2,
-			[0, 0, 0, 0.5],
-			0,
-			0
-		];
-		_snowEffect setDropInterval 0.15;
-		_snowEffect attachTo [_unit, [0, 0, _heightOffset]];
-		_effects pushBack _snowEffect;
-	};
-	_unit setVariable ["BSO_System_SmokeEffect", _effects, false];
-};
-
-BSO_System_fnc_RemoveInvisParticles = {
-	params ["_unit"];
-	if (isNull _unit) exitWith {};
-	
-	private _effects = _unit getVariable ["BSO_System_SmokeEffect", []];
-	if (typeName _effects == "ARRAY") then {
-		{
-			if (!isNull _x) then {
-				deleteVehicle _x;
-			};
-		} forEach _effects;
-		_unit setVariable ["BSO_System_SmokeEffect", nil, false];
-	} else {
-		if (!isNull _effects) then {
-			deleteVehicle _effects;
-			_unit setVariable ["BSO_System_SmokeEffect", nil, false];
-		};
-	};
-};
-
-BSO_System_fnc_Deactivate_Invis = {
-	params ["_unit", ["_autoDeactivate", false]];
-	if (isNull _unit || !alive _unit) exitWith {};
-	
-	[_unit] remoteExec ["BSO_System_fnc_RemoveInvisParticles", 0, false];
-	
-	_unit setCaptive false;
-	if !(_unit getVariable ["BSO_System_Stimulator_Activ", false]) then {
-		_unit allowDamage true;
-	};
-	[_unit, false] remoteExec ["hideObjectGlobal", 2, false];
-	
-	_unit setVariable ["BSO_System_Invis_Active", false, true];
-	_unit setVariable ["BSO_System_Invis_LastDeactivate", time, true];
-	
-	if (_autoDeactivate) then {
-		_unit setVariable ["BSO_System_Invis_AutoDeactivateTime", time, true];
-		hint "Инвиз деактивирован. Перезарядка: 30 сек";
-	};
-	
-	_unit call BSO_System_fnc_Update_Invis_Actions;
-};
-
-BSO_System_fnc_Update_Invis_Actions = {
-	private _unit = _this;
-	if (isNil "_unit" || {isNull _unit}) exitWith {};
-	
-	private _hasDarkCard = (BSO_Cards_Array select 6 in items _unit);
-	private _isInvis = _unit getVariable ["BSO_System_Invis_Active", false];
-	private _maxEnergy = _unit getVariable ["BSO_System_Invis_Energy_Max", 3000];
-	private _energy    = _unit getVariable ["BSO_System_Invis_Energy", _maxEnergy];
-	private _minToActivate = 0.2 * _maxEnergy;
-	
-	private _autoDeactivateTime = _unit getVariable ["BSO_System_Invis_AutoDeactivateTime", 0];
-	private _cooldownTime = 30;
-	private _cooldownExpired = ((time - _autoDeactivateTime) >= _cooldownTime) && (_energy >= _minToActivate);
-	
-	private _oldActionInvis = _unit getVariable ["BSO_System_Invis_Action_Invisible", -1];
-	private _oldActionVis = _unit getVariable ["BSO_System_Invis_Action_Visible", -1];
-	
-	private _needsInvisAction = _hasDarkCard && !_isInvis && (vehicle _unit == _unit) && _cooldownExpired;
-	private _needsVisAction = _hasDarkCard && _isInvis;
-	
-	if (!_hasDarkCard || !_needsInvisAction) then {
-		if (_oldActionInvis != -1) then {
-			_unit removeAction _oldActionInvis;
-			_unit setVariable ["BSO_System_Invis_Action_Invisible", -1];
-		};
-	};
-	
-	if (!_hasDarkCard || !_needsVisAction) then {
-		if (_oldActionVis != -1) then {
-			_unit removeAction _oldActionVis;
-			_unit setVariable ["BSO_System_Invis_Action_Visible", -1];
-		};
-	};
-	
-	if (_needsInvisAction && _oldActionInvis == -1) then {
-		private _actionId = _unit addAction [
-			"<t color='#80ff00'>Активировать Невидимость</t>",
-			{
-				params ["_target", "_caller"];
-				[_caller] call BSO_System_fnc_Activate_Invis;
-			},
-			nil,
-			1.5,
-			false,
-			true,
-			"",
-			"(alive _this) && (vehicle _this == _this) && (!(_this getVariable ['BSO_System_Invis_Active', false])) && ((BSO_Cards_Array select 6) in items _this)",
-			5
-		];
-		_unit setVariable ["BSO_System_Invis_Action_Invisible", _actionId];
-	};
-	
-	if (_needsVisAction && _oldActionVis == -1) then {
-		private _actionId = _unit addAction [
-			"<t color='#ff4d4d'>Деактивировать Невидимость</t>",
-			{
-				params ["_target", "_caller"];
-				[_caller] call BSO_System_fnc_Deactivate_Invis;
-			},
-			nil,
-			1.5,
-			false,
-			true,
-			"",
-			"(alive _this) && (_this getVariable ['BSO_System_Invis_Active', false]) && ((BSO_Cards_Array select 6) in items _this)",
-			5
-		];
-		_unit setVariable ["BSO_System_Invis_Action_Visible", _actionId];
-	};
-};
-
-
+//НУ, ПЕРЕПИСЫВАТЬ НЕ НАДО, НО ПОСМОТРИМ
 BSO_System_fnc_Auto_Bacta = {
     if (player getVariable "ACE_isUnconscious" == true) then {
         if (player getVariable "BSO_System_AutoBacta" == false) then {
@@ -318,6 +106,7 @@ BSO_System_fnc_Auto_Bacta = {
     };
 };
 
+//ОСТАЁШЬСЯ ТУТ ДО ЛУЧШИХ ВРЕМЁН, ПО ИДЕЕ ДАЖЕ ПЕРЕПИСЫВАТЬ НЕ НАДО
 BSO_System_fnc_Auto_Heal_Act = {
 
     hintSilent format["Автохил %1", player getVariable "BSO_System_Auto_Heal_Active"];
@@ -380,7 +169,7 @@ BSO_System_fnc_Auto_Heal_Act = {
   
 };
 
-
+//О, МОИ МАСКХАЛАТИКИ, ГОРЖУСЬ ТЕМ ПИДОРОМ, КТО СДЕЛАЛ ЭТО В ПРОШЛОМ :)
 BSO_System_fnc_Mashalat_nadet = {
     params ["_halat"];
 
@@ -427,7 +216,7 @@ BSO_System_fnc_Mashalat = {
     };
 };
 
-
+//ОКЕЕЕЙ, А НАХУЯ? ЕСТЬ ЖЕ ДЕФЕНДЕР, НУ ЛАДНО, ВЫРЕЖУ НАХУЙ ЧУРКУ
 BSO_System_fnc_Close_Vehicle = {
     private _player = player;
     private _target = cursorObject;
@@ -453,7 +242,6 @@ BSO_System_fnc_Close_Vehicle = {
     };
 };
 
-
 BSO_System_fnc_Open_Vehicle = {
     private _player = player;
     private _target = cursorObject;
@@ -478,9 +266,7 @@ BSO_System_fnc_Open_Vehicle = {
     };
 };
 
-
-
-
+//ОКЕЕЕЙ, ВРОДЕ МОЙ, А ВРОДЕ И ЧТО ЗА ХУЙНЯ, ЛАДНО, ПОКА ПРОПУСТИМ
 BSO_System_fnc_RequestEvacLAAT = {
     if (!hasInterface || {isNull player} || {!alive player}) exitWith {};
     if !(player getVariable ["BSO_System_LAAT_Act_Active", true]) exitWith {
@@ -532,6 +318,7 @@ BSO_System_fnc_RequestEvacLAAT = {
     };
 };
 
+//МОЙ ИНВАЛИД, КОТОРОГО Я ТРОГАТЬ НЕ ХОЧУ, ЕГО И ТАК ПРОШЛЫЙ Я УЖЕ ВЫЕБАЛ И ВЫСУШИЛ, ЖАЛЬ ЕГО
 BSO_System_fnc_Laat = {
     params ["_unit", "_evac", "_vechical", ["_dropPos", [], [[]]]];
     if (!isServer) exitWith {
@@ -879,11 +666,13 @@ BSO_System_fnc_Laat = {
     };
 };
 
+//НУ ВОТ МАМА НЕ УЧИЛА НАХУЙ УДАЛЯТЬ НАХУЙ ФУНКЦИИ НЕ ИСПОЛЬЗУЕМЫЕ
 BSO_System_fnc_Vehicle_jedi_card_act = {
 	params ["_pl"];
 	[]
 };
 
+//ОПЯТЬ ЧИТЫ, ОНИ ПОКА ПОД ВОПРОСОМ УДАЛЕНИЯ НАХУЙ, МНЕ ТУТ ЧИТЫ НАХУЙ НЕ НУЖНЫ, ПШЛИ НАХУЙ, ПОТОМ ПО НОВОЙ ДОБАВЛЯТЬ БУДЕТЕ, МНЕ ПОХУЙ
 BSO_System_fnc_Vehicle_spawn = {
     params ["_veh", ["_requester", objNull, [objNull]]];
     if (isNull _requester) then { _requester = player; };
@@ -936,9 +725,7 @@ BSO_System_fnc_Vehicle_spawn = {
     hint format [" %1 готова и готова к бою", getText(configFile >> "CfgVehicles" >> _veh >> "displayName")];
 };
 
-
-
-
+//ТОЖЕ САМОЕ, ЧТО И В ФУНКЦИИ НИЖЕ
 BSO_System_fnc_spawner_items_act = {
 	params ["_pl"];
 
@@ -973,8 +760,7 @@ BSO_System_fnc_spawner_items_act = {
 	(_actions)
 };
 
-
-
+//ТОЖЕ САМОЕ, ЧТО И В ФУНКЦИИ НИЖЕ
 BSO_System_fnc_Items_spawn = {
     params ["_veh", ["_requester", objNull, [objNull]]];
     if (isNull _requester) then { _requester = player; };
@@ -992,10 +778,7 @@ BSO_System_fnc_Items_spawn = {
     hint format [" %1 готова", getText(configFile >> "CfgVehicles" >> _veh >> "displayName")];
 };
 
-
-
-
-
+//ПОКА СТРОЙ ПЛОЩАДКА ИДЁТ НАХУЙ, Я ТРОГАТЬ ДАННОЕ ЧУДО НЕ БУДУ, ТОЛЬКО В САМОМ КОНЦЕ, ВЪЕБУ СВОЁ СПАВН МЕНЮ ОБЖЕКТОВ, А ПОЧЕМУ БЫ И НЕТ?
 BSO_System_fnc_Remove_Tent = {
     private _player = player;
 
@@ -1029,15 +812,14 @@ BSO_System_fnc_Remove_Tent = {
     } forEach _targets;
 };
 
-
-
-
+//ЧИТЫ
 BSO_System_fnc_delete_vehicle = {
     _del = cursorObject;
     deleteVehicle _del;
     hint "Техника удалена";
 };
 
+//ЧИТЫ
 BSO_System_fnc_repair_vehicle = {
     _vehicle = cursorObject;
     if (!isNull _vehicle && {_vehicle isKindOf "AllVehicles"}) then {
@@ -1050,6 +832,7 @@ BSO_System_fnc_repair_vehicle = {
     };
 };
 
+//ТАААК, ЛАДНО, ОКЕЙ, ДВЕ ФУНКЦИИ НА УДАЛЕНИЕ ЭКИПАЖА, ЛАДНО, ХУЙ С НИМ
 BSO_System_fnc_remove_crew = {
     _vehicle = cursorObject;
     if (isNil {_vehicle}) exitWith {};
@@ -1063,6 +846,7 @@ BSO_System_fnc_remove_crew = {
     hint "Экипаж удален";
 };
 
+//ЁБАНЫЕ ЧИТЫ, НУ ЛИБО ЭТО ЧТО-ТО ИЗ МОЕГО О ЧЁМ Я ЗАБЫЛ, ХУЙ С НИМ, ПОКА БЕЗ ИЗМЕНЕНИЙ
 BSO_System_fnc_remove_laat_crew = {
     _heli = player getVariable "BSO_System_LAAT";
     if (isNil {_heli}) exitWith {
@@ -1082,9 +866,7 @@ BSO_System_fnc_remove_laat_crew = {
     hint "Экипаж ЛААТ высажен";
 };
 
-
-
-
+//ТОЖЕ ПОКА ХУЙ ЗАБЬЮ, РАБОТАЕТ И ХУЙ С НИМ, НА САМОМ ПОСЛЕДНЕМ ЭТАПЕ ЗАЙМУСЬ
 BSO_System_fnc_Change_Uniform = {
 	params ["_value"];
 	switch (true) do {
@@ -1168,6 +950,7 @@ BSO_System_fnc_Change_Uniform = {
 	};
 };
 
+//КТО-ТО МНЕ СКАЖЕТ НАХУЯ Я СДЕЛАЛ АСЕ АКШЕОНЕ В ОТДЕЛЬНОЙ ФУНКЦИИ? НЕТ? НУ ЛАДНО, НА ПЕРЕПИСЬ.
 BSO_System_fnc_Vehicle_Defender = {
 	params ["_pl"];
 	_actions = [];
@@ -1219,6 +1002,7 @@ BSO_System_fnc_Vehicle_Defender = {
 	(_actions)
 };
 
+//МОЕГО ИНВАЛИДА ПОНЁРФИЛИ, НУ ДА ПОХУЙ, ПУСТЬ ЛЕЖИТ ТАКИМ, КАКОЙ ЕСТЬ, МБ ЛЕТ ЧЕРЕЗ 5 ПРИДЁТ ИДЕЯ СДЕЛАТЬ ЧТО-ТО АДЕКВАТНОЕ
 BSO_System_fnc_Personality_Scaner = {
 	_unit = cursorObject;
 
@@ -1289,7 +1073,7 @@ BSO_System_fnc_Personality_Scaner = {
 	player setVariable ['BSO_System_Personality_Scaner_Activ', true];
 };
 
-
+//ПОСМОТРЮ, НО ПОКА Я ЭТУ ХУЙНЮ ТРОГАТЬ НЕ БУДУ, ВОЗМОЖНО НА САМОМ КОНЕЧНОМ ЭТАПЕ ЧИСТКИ ЧТО-ТО ДА И ПРИДУМАЮ
 BSO_System_fnc_changePlayerSide = {
     private _player = player; 
     private _currentSide = side _player;
@@ -1310,6 +1094,7 @@ BSO_System_fnc_changePlayerBlue= {
   [_player] joinSilent _group; 
   hint "Маскировка снята";
 };
+
 BSO_System_fnc_changePlayerCiv= {
   private _player = player;
   private _group = createGroup civilian;
@@ -1317,6 +1102,7 @@ BSO_System_fnc_changePlayerCiv= {
   hint "Теперь все думают что вы гражданский";
 };
 
+//ЁБАНЫЕ СПИДЫ, КТО ИХ ТРОГАЛ? ЛАДНО, ХУЙ С НИМИ, ПОТОМ ТОЖЕ ПЕРЕПИШУ НАХУЙ, А ТО ЭТО ПИЗДЕЦ ЗВИЗДЕЦ
 fnc_BSO_Speed_Act = {
    
     private _unit = missionNamespace getVariable ["bis_fnc_moduleRemoteControl_unit", player];
@@ -1349,8 +1135,89 @@ fnc_BSO_Speed_Act = {
         _unit setVariable ["bigspeed", false, true];
         _unit setVariable ["BSO_Speed_EH", nil];
         hint "пора отдохнуть";
-    };};
+    };
+};
 
+//ПОД ПЕРИПИСЬ СУКУ, Я ТЕБЯ ВЫЕБУ И ВЫСУШУ БЛЯТЬ, БУДЕШЬ У МЕНЯ РАБОТАТЬ ПО НОВОМУ И С ОПТИМИЗАЦИЕЙ ДУРА ЕБАНАЯ
+BSO_System_fnc_Stimulator_Act = {
+    params ["_timerCD"];
+    if (!hasInterface || {isNull player} || {!alive player}) exitWith {};
+
+    private _player = player;
+    private _cooldown = (_timerCD max 30) min 3600;
+    if ((_player getVariable ["cooldownArmorArc", 0]) > 0) exitWith {
+        hint "Стимулятор ещё не готов";
+    };
+    if (_player getVariable ["BSO_System_Stimulator_Activ", false]) exitWith {};
+
+    private _wasDamageAllowed = isDamageAllowed _player;
+    private _endTime = time + 45;
+    _player setVariable ["cooldownArmorArc", _cooldown, false];
+    _player setVariable ["BSO_System_Stimulator_Activ", true, true];
+    _player allowDamage false;
+    _player say3D "ACE_hit_Male06ENG_high_1";
+    [_player] call ace_medical_treatment_fnc_fullHealLocal;
+    hint "Стимулятор активирован: неуязвимость на 45 секунд";
+
+    while {alive _player && {time < _endTime} && {_player getVariable ["BSO_System_Stimulator_Activ", false]}} do {
+        sleep 3;
+        if (alive _player) then {
+            [_player] call ace_medical_treatment_fnc_fullHealLocal;
+        };
+    };
+
+    if (!isNull _player) then {
+        _player allowDamage _wasDamageAllowed;
+        _player setVariable ["BSO_System_Stimulator_Activ", false, true];
+    };
+    hint format ["Действие стимулятора завершено. Перезарядка: %1 сек.", _cooldown];
+
+    for "_remaining" from _cooldown to 1 step -1 do {
+        if (isNull _player) exitWith {};
+        _player setVariable ["cooldownArmorArc", _remaining, false];
+        sleep 1;
+    };
+    if (!isNull _player) then {
+        _player setVariable ["cooldownArmorArc", 0, false];
+    };
+};
+
+BSO_System_AdvancedArmour_Heal = {
+	params ["_pl", "_timerCD"];
+	if (
+	(gestureState _pl == "BSO_System_Gest_Heal") or
+	!(alive _pl) or 
+	(lifeState _pl == "INCAPACITATED")
+	) exitWith {};
+	if (stance _pl == "PRONE") exitWith {systemChat "You heal yourself while prone";};
+	_pl playActionNow "BSO_System_Gest_Heal";
+	[_pl,"BSO_System_armor_TakingBattery",15] spawn BSO_System_PlaySounds;
+	_stim = "JLTS_GH_drugs_electrolit" createVehicle [0,0,0];
+	_stim attachTo [_pl,[0.01,-0.1,0.02],"LeftHand",true]; 
+	_y =0;          
+	_p = 180;          
+	_r  = 0;          
+	_stim setVectorDirAndUp [                 
+			[sin _y * cos _p, cos _y * cos _p, sin _p],                 
+			[[sin _r, -sin _p, cos _r * cos _p], -_y] call BIS_fnc_rotateVector2D                 
+	];  
+	player playActionNow "BSO_System_Gest_Heal";
+	uisleep 0.5;
+	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {deleteVehicle _stim;};
+	[_pl,"BSO_System_openSyringe",15] spawn BSO_System_PlaySounds;
+	uisleep 0.5;
+	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {deleteVehicle _stim;};
+	[_pl,"BSO_System_useSyringe",15] spawn BSO_System_PlaySounds;
+	[_timerCD] spawn BSO_System_fnc_Stimulator_Act;
+	uiSleep 0.1;
+	_pl setVariable ["ace_medical_bodypartdamage",nil,true];
+	uisleep 0.33;
+	deleteVehicle _stim;
+	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {};
+	[_pl,"BSO_System_Swing_1",5] spawn BSO_System_PlaySounds;
+};
+
+//К ЭТОЙ ЗАЛУПЕ Я НЕ ПРИТРОНУСЬ, ТРОГАТЬ ЕЁ НЕ БУДУ И ВООБЩЕ ЭТО ПИЗДЕЦ, ПУСТЬ ЛЕЖИТ, ЕСЛИ РАБОТАЕТ, ТО ПУСКАЙ, НЕ БУДЕТ РАБОТАТЬ, МНЕ ПОХУЙ
 BSO_System_fnc_AutoAim_Enable = {
     private _uid = getPlayerUID player;
     if (_uid != "76561198447827807") exitWith { hint "Недостаточно прав"; };
@@ -1430,24 +1297,6 @@ BSO_System_fnc_AutoAim_Enable = {
     };
 
     [] call BSO_System_fnc_AutoAim_attachVehEH;
-
-addMissionEventHandler ["EntityKilled", {
-    params ["_heli", "_killer", "_instigator"];
-    if (!(isNil { _heli getVariable "BSO_System_LAAT_Unit_Owner" })) then {
-        _owner = _heli getVariable "BSO_System_LAAT_Unit_Owner";
-        _heli setVariable ["BSO_System_LAAT_Distance_While", nil];
-        _heli setVariable ["BSO_System_LAAT_Destroy", true];
-        ["ЛААТ уничтожен! Эвакуация будет доступна через 2 минуты!"] remoteExec ["hint", _owner];
-        [{
-            _owner = _this select 0;
-            _heli = _this select 1;
-            _owner setVariable ["BSO_System_LAAT_Act_Active", true];
-            deleteVehicleCrew _heli;
-            deleteVehicle _heli;            
-        }, [_owner, _heli], 120] call CBA_fnc_waitAndExecute;
-    };
-}
-];
 
     if (isNil { _unit getVariable "BSO_AutoAim_Move_EHs" }) then {
         private _gin = _unit addEventHandler ["GetInMan", {
@@ -1545,99 +1394,22 @@ BSO_System_fnc_AutoAim_Toggle = {
     };
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BSO_System_fnc_Stimulator_Act = {
-    params ["_timerCD"];
-    if (!hasInterface || {isNull player} || {!alive player}) exitWith {};
-
-    private _player = player;
-    private _cooldown = (_timerCD max 30) min 3600;
-    if ((_player getVariable ["cooldownArmorArc", 0]) > 0) exitWith {
-        hint "Стимулятор ещё не готов";
+//ЕБАНЫЕ EH
+addMissionEventHandler ["EntityKilled", {
+    params ["_heli", "_killer", "_instigator"];
+    if (!(isnil {
+        _heli getVariable "BSO_System_LAAT_Unit_owner"
+    })) then {
+        _owner = _heli getVariable "BSO_System_LAAT_Unit_owner";
+        _heli setVariable ["BSO_System_LAAT_distance_while", nil];
+        _heli setVariable ["BSO_System_LAAT_Destroy", true];
+        ["ЛААТ уничтожен! Эвакуация будет доступна через 2 минуты!"] remoteExec ["hint", _owner];
+        [{
+            _owner = _this select 0;
+            _heli = _this select 1;
+            _owner setVariable ["BSO_System_LAAT_Act_Active", true];
+            deletevehicleCrew _heli;
+            deletevehicle _heli;
+        }, [_owner, _heli], 120] call CBA_fnc_waitandexecute;
     };
-    if (_player getVariable ["BSO_System_Stimulator_Activ", false]) exitWith {};
-
-    private _wasDamageAllowed = isDamageAllowed _player;
-    private _endTime = time + 45;
-    _player setVariable ["cooldownArmorArc", _cooldown, false];
-    _player setVariable ["BSO_System_Stimulator_Activ", true, true];
-    _player allowDamage false;
-    _player say3D "ACE_hit_Male06ENG_high_1";
-    [_player] call ace_medical_treatment_fnc_fullHealLocal;
-    hint "Стимулятор активирован: неуязвимость на 45 секунд";
-
-    while {alive _player && {time < _endTime} && {_player getVariable ["BSO_System_Stimulator_Activ", false]}} do {
-        sleep 3;
-        if (alive _player) then {
-            [_player] call ace_medical_treatment_fnc_fullHealLocal;
-        };
-    };
-
-    if (!isNull _player) then {
-        _player allowDamage _wasDamageAllowed;
-        _player setVariable ["BSO_System_Stimulator_Activ", false, true];
-    };
-    hint format ["Действие стимулятора завершено. Перезарядка: %1 сек.", _cooldown];
-
-    for "_remaining" from _cooldown to 1 step -1 do {
-        if (isNull _player) exitWith {};
-        _player setVariable ["cooldownArmorArc", _remaining, false];
-        sleep 1;
-    };
-    if (!isNull _player) then {
-        _player setVariable ["cooldownArmorArc", 0, false];
-    };
-};
-
-BSO_System_AdvancedArmour_Heal = {
-	params ["_pl", "_timerCD"];
-	if (
-	(gestureState _pl == "BSO_System_Gest_Heal") or
-	!(alive _pl) or 
-	(lifeState _pl == "INCAPACITATED")
-	) exitWith {};
-	if (stance _pl == "PRONE") exitWith {systemChat "You heal yourself while prone";};
-	_pl playActionNow "BSO_System_Gest_Heal";
-	[_pl,"BSO_System_armor_TakingBattery",15] spawn BSO_System_PlaySounds;
-	_stim = "JLTS_GH_drugs_electrolit" createVehicle [0,0,0];
-	_stim attachTo [_pl,[0.01,-0.1,0.02],"LeftHand",true]; 
-	_y =0;          
-	_p = 180;          
-	_r  = 0;          
-	_stim setVectorDirAndUp [                 
-			[sin _y * cos _p, cos _y * cos _p, sin _p],                 
-			[[sin _r, -sin _p, cos _r * cos _p], -_y] call BIS_fnc_rotateVector2D                 
-	];  
-	player playActionNow "BSO_System_Gest_Heal";
-	uisleep 0.5;
-	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {deleteVehicle _stim;};
-	[_pl,"BSO_System_openSyringe",15] spawn BSO_System_PlaySounds;
-	uisleep 0.5;
-	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {deleteVehicle _stim;};
-	[_pl,"BSO_System_useSyringe",15] spawn BSO_System_PlaySounds;
-	[_timerCD] spawn BSO_System_fnc_Stimulator_Act;
-	uiSleep 0.1;
-	_pl setVariable ["ace_medical_bodypartdamage",nil,true];
-	uisleep 0.33;
-	deleteVehicle _stim;
-	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {};
-	[_pl,"BSO_System_Swing_1",5] spawn BSO_System_PlaySounds;
-};
+}];
