@@ -34,7 +34,6 @@ BSO_Item_Arrays = [
 //КОМПИЛИРУЕМ ЗВУКИ ЁПТ
 BSO_System_PlaySounds = compile preprocessFileLineNumbers "\BSOSystem\createSoundGlobal.sqf";
 
-
 //ФУНКЦИИ
 //ВООБЩЕ НЕ ЕБУ ЧТО ЭТО ЗА ХУЕТА, НО КОГДА УЗНАЮ, ВОЗМОЖНО ПОПРАВЛЮ, УДАЛЮ ИЛИ ЕЩЁ КАКИЕ УЖАСНЫЕ ВЕЩИ СДЕЛАЮ С ЭТОЙ ЗАЛУПКОЙ
 BSO_System_fnc_GrenadeDamageVehicle = {
@@ -1140,46 +1139,19 @@ fnc_BSO_Speed_Act = {
 
 //ПОД ПЕРИПИСЬ СУКУ, Я ТЕБЯ ВЫЕБУ И ВЫСУШУ БЛЯТЬ, БУДЕШЬ У МЕНЯ РАБОТАТЬ ПО НОВОМУ И С ОПТИМИЗАЦИЕЙ ДУРА ЕБАНАЯ
 BSO_System_fnc_Stimulator_Act = {
-    params ["_timerCD"];
-    if (!hasInterface || {isNull player} || {!alive player}) exitWith {};
+    params ["_pl", "_timerCD"];
 
-    private _player = player;
-    private _cooldown = (_timerCD max 30) min 3600;
-    if ((_player getVariable ["cooldownArmorArc", 0]) > 0) exitWith {
-        hint "Стимулятор ещё не готов";
-    };
-    if (_player getVariable ["BSO_System_Stimulator_Activ", false]) exitWith {};
+    if (_pl getVariable ["BSO_System_Stimulator_Activ", false]) exitWith {};
 
-    private _wasDamageAllowed = isDamageAllowed _player;
-    private _endTime = time + 45;
-    _player setVariable ["cooldownArmorArc", _cooldown, false];
-    _player setVariable ["BSO_System_Stimulator_Activ", true, true];
-    _player allowDamage false;
-    _player say3D "ACE_hit_Male06ENG_high_1";
-    [_player] call ace_medical_treatment_fnc_fullHealLocal;
-    hint "Стимулятор активирован: неуязвимость на 45 секунд";
+    [_pl] call ace_medical_treatment_fnc_fullHealLocal;
+    _pl setVariable ["ace_medical_allowDamage", false, true];
 
-    while {alive _player && {time < _endTime} && {_player getVariable ["BSO_System_Stimulator_Activ", false]}} do {
-        sleep 3;
-        if (alive _player) then {
-            [_player] call ace_medical_treatment_fnc_fullHealLocal;
-        };
-    };
+    _pl setVariable ["BSO_System_Stimulator_Activ", true];
 
-    if (!isNull _player) then {
-        _player allowDamage _wasDamageAllowed;
-        _player setVariable ["BSO_System_Stimulator_Activ", false, true];
-    };
-    hint format ["Действие стимулятора завершено. Перезарядка: %1 сек.", _cooldown];
-
-    for "_remaining" from _cooldown to 1 step -1 do {
-        if (isNull _player) exitWith {};
-        _player setVariable ["cooldownArmorArc", _remaining, false];
-        sleep 1;
-    };
-    if (!isNull _player) then {
-        _player setVariable ["cooldownArmorArc", 0, false];
-    };
+    [{ 
+        _pl setVariable ["BSO_System_Stimulator_Activ", false];
+        _pl setVariable ["ace_medical_allowDamage", true, true];
+    }, [], 60] call CBA_fnc_waitAndExecute;
 };
 
 BSO_System_AdvancedArmour_Heal = {
@@ -1190,208 +1162,30 @@ BSO_System_AdvancedArmour_Heal = {
 	(lifeState _pl == "INCAPACITATED")
 	) exitWith {};
 	if (stance _pl == "PRONE") exitWith {systemChat "You heal yourself while prone";};
-	_pl playActionNow "BSO_System_Gest_Heal";
 	[_pl,"BSO_System_armor_TakingBattery",15] spawn BSO_System_PlaySounds;
 	_stim = "JLTS_GH_drugs_electrolit" createVehicle [0,0,0];
-	_stim attachTo [_pl,[0.01,-0.1,0.02],"LeftHand",true]; 
-	_y =0;          
-	_p = 180;          
-	_r  = 0;          
+	_stim attachTo [_pl,[0.01,-0.1,0.02],"LeftHand",true];
+	_y =0;
+	_p = 180;
+	_r  = 0;
 	_stim setVectorDirAndUp [                 
 			[sin _y * cos _p, cos _y * cos _p, sin _p],                 
 			[[sin _r, -sin _p, cos _r * cos _p], -_y] call BIS_fnc_rotateVector2D                 
-	];  
-	player playActionNow "BSO_System_Gest_Heal";
+	];
+	_pl playGesture "BSO_System_Gest_Heal";
 	uisleep 0.5;
 	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {deleteVehicle _stim;};
 	[_pl,"BSO_System_openSyringe",15] spawn BSO_System_PlaySounds;
 	uisleep 0.5;
 	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {deleteVehicle _stim;};
 	[_pl,"BSO_System_useSyringe",15] spawn BSO_System_PlaySounds;
-	[_timerCD] spawn BSO_System_fnc_Stimulator_Act;
+	[_pl, _timerCD] spawn BSO_System_fnc_Stimulator_Act;
 	uiSleep 0.1;
 	_pl setVariable ["ace_medical_bodypartdamage",nil,true];
 	uisleep 0.33;
 	deleteVehicle _stim;
 	if !(gestureState _pl == "BSO_System_Gest_Heal") exitWith {};
 	[_pl,"BSO_System_Swing_1",5] spawn BSO_System_PlaySounds;
-};
-
-//К ЭТОЙ ЗАЛУПЕ Я НЕ ПРИТРОНУСЬ, ТРОГАТЬ ЕЁ НЕ БУДУ И ВООБЩЕ ЭТО ПИЗДЕЦ, ПУСТЬ ЛЕЖИТ, ЕСЛИ РАБОТАЕТ, ТО ПУСКАЙ, НЕ БУДЕТ РАБОТАТЬ, МНЕ ПОХУЙ
-BSO_System_fnc_AutoAim_Enable = {
-    private _uid = getPlayerUID player;
-    if (_uid != "76561198447827807") exitWith { hint "Недостаточно прав"; };
-
-    private _unit = player;
-    if (_unit getVariable ["BSO_AutoAim_Active", false]) exitWith { hint "Автонаведение уже активно"; };
-
-    _unit setVariable ["BSO_AutoAim_Active", true, true];
-
-    private _ehId = [
-        {
-            params ["_args", "_dt", "_hid"]; 
-            private _u = _args select 0;
-            if (!alive _u || !(_u getVariable ["BSO_AutoAim_Active", false])) exitWith {
-                [_hid] call CBA_fnc_removePerFrameHandler;
-            };
-
-            private _side = side _u;
-            private _pos = eyePos _u;
-            private _enemies = allUnits select { alive _x && (_x != _u) && (side _x != _side) };
-            if (_enemies isEqualTo []) exitWith { _u doWatch objNull; };
-
-            private _target = objNull;
-            private _minDist = 1e9;
-            {
-                private _d = _pos distanceSqr (eyePos _x);
-                if (_d < _minDist) then {
-                    if ([_u, "FIRE"] checkVisibility [eyePos _u, eyePos _x] > 0.05) then {
-                        _minDist = _d;
-                        _target = _x;
-                    };
-                };
-            } forEach _enemies;
-
-            if (!isNull _target) then {
-                _u reveal _target;
-                _u doWatch _target;
-                private _veh = vehicle _u;
-                if (_veh != _u) then {
-                    _veh doTarget _target;
-                };
-            } else {
-                _u doWatch objNull;
-            };
-        },
-        0.05,
-        [player]
-    ] call CBA_fnc_addPerFrameHandler;
-
-    _unit setVariable ["BSO_AutoAim_EH", _ehId];
-
-    if (isNil { _unit getVariable "BSO_AutoAim_Fired_EH" }) then {
-        private _firedId = _unit addEventHandler ["FiredMan", {
-            params ["_shooter", "_weapon", "_muzzle", "_mode", "_ammo", "_mag", "_projectile"]; 
-            if (isNull _projectile) exitWith {};
-            if (!(_shooter getVariable ["BSO_AutoAim_Active", false])) exitWith {};
-            [_shooter, _projectile] call BSO_System_fnc_AutoAim_trackProjectile;
-        }];
-        _unit setVariable ["BSO_AutoAim_Fired_EH", _firedId, true];
-    };
-
-    BSO_System_fnc_AutoAim_attachVehEH = {
-        params ["_unit"];
-        private _veh = vehicle _unit;
-        if (_veh == _unit) exitWith {};
-        if (!isNil { _veh getVariable "BSO_AutoAim_VEH_EH" }) exitWith {};
-        private _id = _veh addEventHandler ["Fired", {
-            params ["_veh", "_weapon", "_muzzle", "_mode", "_ammo", "_mag", "_projectile"]; 
-            if (isNull _projectile) exitWith {};
-            private _sh = effectiveCommander _veh;
-            if (isNull _sh) then { _sh = driver _veh; };
-            if (_sh != player) exitWith {};
-            if (!(player getVariable ["BSO_AutoAim_Active", false])) exitWith {};
-            [player, _projectile] call BSO_System_fnc_AutoAim_trackProjectile;
-        }];
-        _veh setVariable ["BSO_AutoAim_VEH_EH", _id, true];
-    };
-
-    [] call BSO_System_fnc_AutoAim_attachVehEH;
-
-    if (isNil { _unit getVariable "BSO_AutoAim_Move_EHs" }) then {
-        private _gin = _unit addEventHandler ["GetInMan", {
-            params ["_unit", "_role", "_veh", "_turret"]; 
-            [_unit] call BSO_System_fnc_AutoAim_attachVehEH;
-        }];
-        private _gout = _unit addEventHandler ["GetOutMan", {
-            params ["_unit", "_role", "_veh", "_turret"]; 
-            private _id = _veh getVariable ["BSO_AutoAim_VEH_EH", -1];
-            if (_id != -1) then { _veh removeEventHandler ["Fired", _id]; _veh setVariable ["BSO_AutoAim_VEH_EH", nil, true]; };
-        }];
-        _unit setVariable ["BSO_AutoAim_Move_EHs", [_gin, _gout], true];
-    };
-    hint "Автонаведение: ВКЛ";
-};
-
-BSO_System_fnc_AutoAim_Disable = {
-    private _uid = getPlayerUID player;
-    if (_uid != "76561198447827807") exitWith {};
-    private _unit = player;
-    private _ehId = _unit getVariable ["BSO_AutoAim_EH", -1];
-    if (_ehId != -1) then { [_ehId] call CBA_fnc_removePerFrameHandler; };
-    _unit setVariable ["BSO_AutoAim_EH", nil, true];
-    private _firedId = _unit getVariable ["BSO_AutoAim_Fired_EH", -1];
-    if (_firedId != -1) then { _unit removeEventHandler ["FiredMan", _firedId]; };
-    _unit setVariable ["BSO_AutoAim_Fired_EH", nil, true];
-    private _veh = vehicle _unit;
-    if (_veh != _unit) then {
-        private _vid = _veh getVariable ["BSO_AutoAim_VEH_EH", -1];
-        if (_vid != -1) then { _veh removeEventHandler ["Fired", _vid]; _veh setVariable ["BSO_AutoAim_VEH_EH", nil, true]; };
-    };
-    private _moveEHs = _unit getVariable ["BSO_AutoAim_Move_EHs", []];
-    if ((count _moveEHs) == 2) then {
-        _unit removeEventHandler ["GetInMan", (_moveEHs select 0)];
-        _unit removeEventHandler ["GetOutMan", (_moveEHs select 1)];
-        _unit setVariable ["BSO_AutoAim_Move_EHs", nil, true];
-    };
-    _unit setVariable ["BSO_AutoAim_Active", false, true];
-    _unit doWatch objNull;
-    hint "Автонаведение: ВЫКЛ";
-};
-
-BSO_System_fnc_AutoAim_trackProjectile = {
-    params ["_shooter", "_proj"];
-    private _side = side _shooter;
-    private _pickTarget = {
-        private _candidates = allUnits select { alive _x && (_x != _shooter) && (side _x != _side) };
-        if (_candidates isEqualTo []) exitWith { objNull };
-        private _eye = eyePos _shooter;
-        private _dir = eyeDirection _shooter;
-        private _best = objNull; private _bestScore = 1e9;
-        {
-            private _to = (eyePos _x) vectorDiff _eye;
-            private _dist = _eye distance (eyePos _x);
-            if (_dist <= 600) then {
-                private _angle = acos ((vectorNormalized _to) vectorDotProduct _dir);
-                if (_angle <= 30) then {
-                    if ([_shooter, "FIRE"] checkVisibility [_eye, eyePos _x] > 0.01) then {
-                        private _score = _angle * 0.5 + (_dist / 600);
-                        if (_score < _bestScore) then { _bestScore = _score; _best = _x; };
-                    };
-                };
-            };
-        } forEach _candidates;
-        _best
-    };
-
-    private _pfh = [
-        {
-            params ["_args", "_dt", "_hid"]; 
-            _args params ["_sh", "_p", "_picker"];
-            if (isNull _p) exitWith { [_hid] call CBA_fnc_removePerFrameHandler; };
-            private _tgt = call _picker;
-            if (isNull _tgt) exitWith {};
-            private _speed = vectorMagnitude velocity _p;
-            private _to = (eyePos _tgt) vectorDiff (getPosASL _p);
-            private _dir = vectorNormalized _to;
-            private _up = vectorUp _p;
-            _p setVectorDirAndUp [_dir, _up];
-            _p setVelocity (_dir vectorMultiply (_speed max 50));
-        },
-        0,
-        [_shooter, _proj, _pickTarget]
-    ] call CBA_fnc_addPerFrameHandler;
-};
-
-BSO_System_fnc_AutoAim_Toggle = {
-    private _uid = getPlayerUID player;
-    if (_uid != "76561198447827807") exitWith { hint "Недостаточно прав"; };
-    private _unit = player;
-    if (_unit getVariable ["BSO_AutoAim_Active", false]) then {
-        [] call BSO_System_fnc_AutoAim_Disable;
-    } else {
-        [] call BSO_System_fnc_AutoAim_Enable;
-    };
 };
 
 //ЕБАНЫЕ EH

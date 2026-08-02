@@ -30,12 +30,6 @@ player addEventHandler ["InventoryClosed", {
     _unit call BSO_System_fnc_Update_Invis_Actions;
 }];
 
-//СТИМУЛЯТОР
-player addEventHandler ["HandleDamage", {
-    params ["_unit", "_selection", "_damage"];
-    if (_unit getVariable ["BSO_System_Stimulator_Activ", false]) exitWith {0};
-}];
-
 //ПОКА НЕ ЕБУ, НО КОГДА БУДУ ЕБАТЬ, БУДУ РАБОТАТЬ
 //ТЕПЕРЬ Я ЕБУ, НО ПОКА ТРОГАТЬ НЕ БУДУ
 ["ace_unconscious", {
