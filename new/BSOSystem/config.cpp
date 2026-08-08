@@ -176,7 +176,7 @@ class CfgVehicles
 				onlyForPlayer=0;
 				shortcut="";
                 condition="(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive this) && ((this getVariable ['bigspeed', false]) == false) && ((BSO_Cards_Array select 2 in items player) or (BSO_Cards_Array select 1 in items player) or (BSO_Cards_Array select 5 in items player) or (getPlayerUID player == '76561198183586917'))";
-				statement="[] spawn fnc_BSO_Speed_Act;";				
+				statement="[this] spawn fnc_BSO_Speed_Act;";				
 				};	
 
 			class BSO_System_SpeedDown
@@ -377,47 +377,7 @@ class CfgVehicles
 						exceptions[] = {};
 						statement = "player removeItem 'ACE_UAVBattery'; [player, 0, 'B_T_arf_drone_dynemic_Loadout_F'] spawn BSO_System_fnc_Laat;";
 						icon = "";					
-					};
-
-					
-
-
-
-
-
-
-
-
-
-
-					class BSO_System_delete_vehicle
-					{
-						displayName = "Удалить технику";
-						condition = " (BSO_Cards_Array select 4 in items player)";
-						exceptions[] = {};
-						statement = "[] spawn BSO_System_fnc_delete_vehicle;";
-						icon = "";
-					};	
-
-					class BSO_System_repair_vehicle
-					{
-						displayName = "Починить технику";
-						condition = "(BSO_Cards_Array select 4 in items player)";
-						exceptions[] = {};
-						statement = "[] spawn BSO_System_fnc_repair_vehicle;";
-						icon = "";
-					};	
-
-					class BSO_System_remove_crew
-						{
-						displayName = "Выгнать экипаж из техники";
-						condition = "(BSO_Cards_Array select 4 in items player)";
-						exceptions[] = {};
-						statement = "[] spawn BSO_System_fnc_remove_crew;";
-						icon = "";
-						};	
-				
-					
+					};					
 				};
 
 				class BSO_System_Change_Uniform
@@ -490,7 +450,6 @@ class CfgVehicles
         };			
 	};
 };
-
 
 class CfgWeapons 
 {
