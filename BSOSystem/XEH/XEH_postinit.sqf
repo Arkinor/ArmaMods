@@ -1,15 +1,7 @@
 if (!hasInterface) exitWith {};
 
-//ПОЗЖЕ БУДУ ВЫРЕЗАТЬ ЭТУ ЗАЛУПУ, ЭТО БРЕД ДЕЛАТЬ МИЛЛИОН ПЕРЕМЕННЫХ КОТОРЫЕ ОПРЕДЕЛЯЮТСЯ С САМОГО НАЧАЛА, НУЖНО ПРИДУМАТЬ ЧТО-ТО НОВОЕ С ЭТИМИ ЕБАНЫМИ ПЕРЕМЕННЫМИ, СУКА, РОТ ЕБАЛ ЭТИХ ПЕРЕМЕННЫХ.
-player setVariable ["cooldownArmorArc", 0];
-player setVariable ["BSO_System_Auto_Heal_Act_Active", true];
-player setVariable ["BSO_System_AutoBacta", false];
-player setVariable ["BSO_System_LAAT_Act_Active", true];
-player setVariable ["BSO_System_Stimulator_Activ", false];
-player setVariable ["BSO_System_Auto_Heal_Active", false];
-player setVariable ["bigspeed", false];
+1555 cutRsc ["RscDisplay_BSO_System", "PLAIN"];
 
-//РАБОТА С КАРТОЧКАМИ
 ["ace_arsenal_displayClosed", {
     ACE_player spawn BSO_System_fnc_Proverka_Delete_Ids;
 }] call CBA_fnc_addEventHandler;
@@ -27,30 +19,45 @@ player addEventHandler ["InventoryOpened", {
 player addEventHandler ["InventoryClosed", {
     params ["_unit", "_container"];
     _unit spawn BSO_System_fnc_Proverka_Delete_Ids;
-    _unit call BSO_System_fnc_Update_Invis_Actions;
 }];
 
-//ПОКА НЕ ЕБУ, НО КОГДА БУДУ ЕБАТЬ, БУДУ РАБОТАТЬ
-//ТЕПЕРЬ Я ЕБУ, НО ПОКА ТРОГАТЬ НЕ БУДУ
-["ace_unconscious", {
-    if ((player getVariable "ACE_isUnconscious" == true) &&
-        (player getVariable "BSO_System_Stimulator_Activ" == false) &&
+["ace_unconscious", {	
+	params ["_unit", "_isUnconscious"];
+
+    if ((_isUnconscious) &&
+        (_unit getVariable "BSO_System_Stimulator_Activ" == false) &&
         (
             (
-                ((toLower (name player)) find "fantar" >= 0)
-                || ((toLower (name player)) find "lucas" >= 0)
+                ((toLower (name _unit)) find "fantar" >= 0)
+                || ((toLower (name _unit)) find "lucas" >= 0)
             ) ||
             (
-                ("JLTS_drugs_bacta_red" in items player) &&
-                (count BSO_Cards_Array > 0 && (BSO_Cards_Array select 0) in items player)
+                ("JLTS_drugs_bacta_red" in items _unit) &&
+                (count BSO_Cards_Array > 0 && (BSO_Cards_Array select 0) in items _unit)
             )
         )
     ) then {
-        [] spawn BSO_System_fnc_Auto_Bacta;
+        [_unit] spawn BSO_System_fnc_Auto_Bacta;
     };
 }] call CBA_fnc_addEventHandler;
 
-//НАХУЙЯ ЭТО В МОЁМ БСО СИСТЕМЕ, АЛО НАХУЙ, НАХУЯ ДОБАВЛЯТЬ ВСЯКУЮ ЗАЛУПУ В ЭТОТ ДОМ ИНВАЛИДОВ
+player addEventHandler ["GetInMan", {
+	params ["_unit", "_role", "_vehicle", "_turret"];
+	if (_vehicle getVariable ["BSO_System_vehicle_Defender", true]) then {
+		["car_ui_red", ""] spawn BSO_System_fnc_ctrl_filling;
+	};
+}];
+
+player addEventHandler ["GetOutMan", {
+	params ["_unit", "_role", "_vehicle", "_turret", "_isEject"];
+	if (_vehicle getVariable ["BSO_System_vehicle_Defender", true]) then {
+		["", "car_ui_red"] spawn BSO_System_fnc_ctrl_filling;
+	};
+	if (isNil {_vehicle getVariable "BSO_System_vehicle_Defender"}) then {
+		["", "car_ui_red"] spawn BSO_System_fnc_ctrl_filling;
+	};
+}];
+
 [] spawn {
 	waitUntil { !isNull player && { alive player } };
 	private _radius = 5;
