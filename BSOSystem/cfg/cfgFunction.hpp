@@ -54,5 +54,8 @@ class BSO_System
         class change_Uniform
         {
         };
+        class cards_arr_finder
+        {
+        };
     };
 };

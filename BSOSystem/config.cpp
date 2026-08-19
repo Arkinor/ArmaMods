@@ -8,10 +8,20 @@ class CfgPatches
 			"BSO_System_ids_RC",                    	
     		"BSO_System_ids_ARF",                       
     		"BSO_System_ids_ARC",                       
-			"BSO_System_General_Zey",                   
+			"BSO_System_ids_General_Zey",                   
             "BSO_System_ids_RC_Nexus",                  
             "BSO_System_ids_Dark",                      
             "BSO_System_ids_Henker"                     
+		};
+		Cards_ids_arr[]={
+			"BSO_System_ids_SOB",                  		
+			"BSO_System_ids_RC",                    	
+    		"BSO_System_ids_ARF",                       
+    		"BSO_System_ids_ARC",                       
+			"BSO_System_ids_General_Zey",                   
+            "BSO_System_ids_RC_Nexus",                  
+            "BSO_System_ids_Dark",                      
+            "BSO_System_ids_Henker" 			
 		};
 		requiredVersion=0.1;
 		requiredAddons[]={
@@ -116,7 +126,7 @@ class CfgVehicles
 				hideOnUse = 1;
 				onlyForPlayer = 0;
 				shortcut = "";
-				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive player) && !(player getVariable ['BSO_System_Stimulator_Activ', false]) && (gestureState this != 'BSO_System_Gest_Heal') && ((BSO_Cards_Array select 3 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 5 in items player))";
+				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive player) && !(player getVariable ['BSO_System_Stimulator_Activ', false]) && (gestureState this != 'BSO_System_Gest_Heal') && ([['ARC', 'General_Zey', 'RC_Nexus'] , this] call BSO_System_fnc_cards_arr_finder)";
 				statement = "[this, 600] spawn BSO_System_fnc_Stimulator_System";
 			};
 
@@ -131,7 +141,7 @@ class CfgVehicles
 				hideOnUse = 1;
 				onlyForPlayer = 0;
 				shortcut = "";
-				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive player) && (player getVariable ['BSO_System_Auto_Heal_Active', false] == false) && ((BSO_Cards_Array select 1 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 5 in items player))";
+				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive player) && (player getVariable ['BSO_System_Auto_Heal_Active', false] == false) && ([['RC', 'General_Zey', 'RC_Nexus'] , this] call BSO_System_fnc_cards_arr_finder)";
 				statement = " this setVariable ['BSO_System_Auto_Heal_Active', true]; [this] spawn BSO_System_fnc_Auto_Heal;";
 			};
 
@@ -146,7 +156,7 @@ class CfgVehicles
 				hideOnUse = 1;
 				onlyForPlayer = 0;
 				shortcut = "";
-				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive player) && (player getVariable ['BSO_System_Auto_Heal_Active', false] == true) && ((BSO_Cards_Array select 1 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 5 in items player))";
+				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive player) && (player getVariable ['BSO_System_Auto_Heal_Active', false] == true) && ([['RC', 'General_Zey', 'RC_Nexus'] , this] call BSO_System_fnc_cards_arr_finder)";
 				statement = "this setVariable ['BSO_System_Auto_Heal_Active', false]; ['', 'heal_ui_green'] spawn BSO_System_fnc_ctrl_filling;";
 			};
 
@@ -160,7 +170,7 @@ class CfgVehicles
 				hideOnUse = 1;
 				onlyForPlayer = 0;
 				shortcut = "";
-				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive this) && ((this getVariable ['bigspeed', false]) == false) && ((BSO_Cards_Array select 2 in items player) or (BSO_Cards_Array select 1 in items player) or (BSO_Cards_Array select 5 in items player) or (getPlayerUID player == '76561198183586917'))";
+				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive this) && ((this getVariable ['bigspeed', false]) == false) && (([['RC', 'ARF', 'RC_Nexus'] , this] call BSO_System_fnc_cards_arr_finder) or (getPlayerUID player == '76561198183586917'))";
 				statement = "[this] spawn BSO_System_fnc_Speed_Toggle;";
 			};
 
@@ -174,7 +184,7 @@ class CfgVehicles
 				hideOnUse = 1;
 				onlyForPlayer = 0;
 				shortcut = "";
-				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive this) && ((this getVariable ['bigspeed', false]) == true) && ((BSO_Cards_Array select 2 in items player) or (BSO_Cards_Array select 1 in items player) or (BSO_Cards_Array select 5 in items player) or (getPlayerUID player == '76561198183586917'))";
+				condition = "(missionNamespace getVariable['bis_fnc_moduleRemoteControl_unit', player] == this) && (alive this) && ((this getVariable ['bigspeed', false]) == true) && (([['RC', 'ARF', 'RC_Nexus'] , this] call BSO_System_fnc_cards_arr_finder) or (getPlayerUID player == '76561198183586917'))";
 				statement = "[this] spawn BSO_System_fnc_Speed_Toggle;";
 			};
 		};
@@ -183,21 +193,21 @@ class CfgVehicles
 			class BSO_System_ACE_Action
 			{
 				displayName = "БСО";
-				condition = "((BSO_Cards_Array select 0 in items ACE_player) or (BSO_Cards_Array select 4 in items ACE_player) or (BSO_Cards_Array select 7 in items ACE_player))";
+				condition = "([['SOB', 'General_Zey', 'Henker'] , this] call BSO_System_fnc_cards_arr_finder)";
 				exceptions[] = {"isNotInside"};
 				icon = "\BSOSystem\data\bso.paa";
 
 				class BSO_System_Drones
 				{
 					displayName = "Дроны";
-					condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 5 in items player))";
+					condition = "([['SOB', 'General_Zey', 'RC_Nexus'] , this] call BSO_System_fnc_cards_arr_finder)";
 					exceptions[] = {};
 					icon = "";
 
 					class BSO_System_Razved_Dron
 					{
 						displayName = "Собрать разведовательный дрон";
-						condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player)) && ('ACE_UAVBattery' in items player)";
+						condition = "([['SOB', 'General_Zey'] , this] call BSO_System_fnc_cards_arr_finder) && ('ACE_UAVBattery' in items player)";
 						exceptions[] = {};
 						statement = "player removeItem 'ACE_UAVBattery'; ['mti_armoury_drones_prowler_1500'] spawn BSO_System_fnc_Vehicle_spawn;";
 						icon = "";
@@ -205,7 +215,7 @@ class CfgVehicles
 					class BSO_System_Mouse_Dron
 					{
 						displayName = "Собрать дрон мышь";
-						condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player))";
+						condition = "([['SOB', 'General_Zey'] , this] call BSO_System_fnc_cards_arr_finder)";
 						exceptions[] = {};
 						statement = "['mti_armoury_drones_mse_Spyro'] spawn BSO_System_fnc_Vehicle_spawn;";
 						icon = "";
@@ -215,7 +225,7 @@ class CfgVehicles
 				class BSO_System_Mashalat
 				{
 					displayName = "Маскхалаты";
-					condition = "(BSO_Cards_Array select 4 in items player)";
+					condition = "([['General_Zey'] , this] call BSO_System_fnc_cards_arr_finder)";
 					icon = "";
 					class BSO_System_Mashalat_dust
 					{
@@ -262,7 +272,7 @@ class CfgVehicles
 				class BSO_System_changePlayerSide
 				{
 					displayName = "Сменить сторону Синяя/Фиолетовая";
-					condition = "(BSO_Cards_Array select 0 in items player)";
+					condition = "([['SOB'] , this] call BSO_System_fnc_cards_arr_finder)";
 					exceptions[] = {};
 					statement = "[] spawn BSO_System_fnc_changePlayerSide;";
 					icon = "";
@@ -271,13 +281,13 @@ class CfgVehicles
 				class BSO_System_vehicle_ACE_act
 				{
 					displayName = "Вызов техники";
-					condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 5 in items player))";
+					condition = "([['SOB', 'General_Zey', 'RC_Nexus'] , this] call BSO_System_fnc_cards_arr_finder)";
 					icon = "\BSOSystem\data\laat_ui_black.paa";
 					insertChildren = "_this call BSO_System_fnc_Vehicle_jedi_card_act;";
 					class BSO_System_Laat_Evac
 					{
 						displayName = "Вызвать эвакуационный LAAT";
-						condition = "(player getVariable ['BSO_System_LAAT_Act_Active', true]) && ((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player) or (BSO_Cards_Array select 5 in items player))";
+						condition = "(player getVariable ['BSO_System_LAAT_Act_Active', true]) && ([['SOB', 'General_Zey', 'RC_Nexus'] , this] call BSO_System_fnc_cards_arr_finder)";
 						exceptions[] = {};
 						statement = "[] call BSO_System_fnc_RequestEvacLAAT";
 						icon = "";
@@ -285,7 +295,7 @@ class CfgVehicles
 					class BSO_System_Var_Drone
 					{
 						displayName = "Вызвать боевой дрон";
-						condition = "((BSO_Cards_Array select 0 in items player) or (BSO_Cards_Array select 4 in items player)) && ('ACE_UAVBattery' in items player)";
+						condition = "([['SOB', 'General_Zey'] , this] call BSO_System_fnc_cards_arr_finder) && ('ACE_UAVBattery' in items player)";
 						exceptions[] = {};
 						statement = "player removeItem 'ACE_UAVBattery'; [player, 0, 'B_T_arf_drone_dynemic_Loadout_F'] spawn BSO_System_fnc_Laat;";
 						icon = "";
@@ -295,7 +305,7 @@ class CfgVehicles
 				class BSO_System_Change_Uniform
 				{
 					displayName = "Комплект одежды";
-					condition = "(BSO_Cards_Array select 0 in items player) ";
+					condition = "([['SOB'] , this] call BSO_System_fnc_cards_arr_finder)";
 					icon = "";
 					class BSO_System_Change_Save_Uniform
 					{
@@ -326,7 +336,7 @@ class CfgVehicles
 				class BSO_System_Artillery_Strike
 				{
 					displayName = "<t color='#ff0000'>Вызвать артподдержку</t>";
-					condition = "(((name player) find '1171') >= 0) or ((BSO_Cards_Array select 7) in items player)";
+					condition = "(((name player) find '1171') >= 0) or ([['Henker'] , this] call BSO_System_fnc_cards_arr_finder)";
 					exceptions[] = {};
 					statement = "[] spawn BSO_System_fnc_selectArtilleryTarget;";
 					icon = "";
@@ -339,7 +349,7 @@ class CfgVehicles
 					exceptions[] = {"isNotInside"};
 					statement = "[_player] call BSO_System_fnc_Vehicle_Defender_Toggle";
 				};
-			};		
+			};
 		};
 	};
 };
@@ -372,7 +382,7 @@ class CfgWeapons
 		displayName="[SOB] Identification Card - RC Nexus";
 	};
 
-	class BSO_System_General_Zey: JLTS_ids_gar_army
+	class BSO_System_ids_General_Zey: JLTS_ids_gar_army
 	{
 		displayName="[SOB] Identification Card - General Zey";
 	};
