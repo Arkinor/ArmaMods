@@ -1,12 +1,12 @@
 BSO_Cards_Array = [ 
-    "BSO_System_ids_SOB",
-    "BSO_System_ids_RC",
-    "BSO_System_ids_ARF",
-    "BSO_System_ids_ARC",
-    "BSO_System_General_Zey",
-    "BSO_System_ids_RC_Nexus",
-    "BSO_System_ids_Dark",
-    "BSO_System_ids_Henker"
+    "BSO_System_ids_SOB", // 0
+    "BSO_System_ids_RC", // 1
+    "BSO_System_ids_ARF", // 2
+    "BSO_System_ids_ARC", // 3
+    "BSO_System_General_Zey", // 4
+    "BSO_System_ids_RC_Nexus", // 5
+    "BSO_System_ids_Dark", // 6
+    "BSO_System_ids_Henker" // 7
 ];
 
 BSO_System_fnc_GrenadeDamageVehicle = {
