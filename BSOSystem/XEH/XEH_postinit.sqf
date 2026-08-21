@@ -1,5 +1,16 @@
 if (!hasInterface) exitWith {};
 
+BSO_Cards_HashMap = createHashMap;
+
+{
+    _className = configName _x;
+    _shortDisplayName = toLower getText (_x >> "shortDisplayName");
+
+    if (_shortDisplayName != "") then {
+        BSO_Cards_HashMap set [_shortDisplayName, _className];
+    };
+} forEach ("true" configClasses (configFile >> "CfgWeapons"));
+
 1555 cutRsc ["RscDisplay_BSO_System", "PLAIN"];
 
 ["ace_arsenal_displayClosed", {

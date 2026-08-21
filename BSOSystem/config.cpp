@@ -13,16 +13,6 @@ class CfgPatches
             "BSO_System_ids_Dark",                      
             "BSO_System_ids_Henker"                     
 		};
-		Cards_ids_arr[]={
-			"BSO_System_ids_SOB",                  		
-			"BSO_System_ids_RC",                    	
-    		"BSO_System_ids_ARF",                       
-    		"BSO_System_ids_ARC",                       
-			"BSO_System_ids_General_Zey",                   
-            "BSO_System_ids_RC_Nexus",                  
-            "BSO_System_ids_Dark",                      
-            "BSO_System_ids_Henker" 			
-		};
 		requiredVersion=0.1;
 		requiredAddons[]={
 			"A3_Ui_F", "JLTS_C_IDs"
@@ -274,7 +264,7 @@ class CfgVehicles
 					displayName = "Сменить сторону Синяя/Фиолетовая";
 					condition = "([['SOB'] , this] call BSO_System_fnc_cards_arr_finder)";
 					exceptions[] = {};
-					statement = "[] spawn BSO_System_fnc_changePlayerSide;";
+					statement = "[_player] spawn BSO_System_fnc_changePlayerSide;";
 					icon = "";
 				};
 
@@ -361,40 +351,48 @@ class CfgWeapons
 	class BSO_System_ids_SOB: JLTS_ids_gar_army
 	{
 		displayName="[SOB] Identification Card - SOB";
+		shortDisplayName="SOB";
 	};	
 	class BSO_System_ids_RC: JLTS_ids_gar_army
 	{
 		displayName="[SOB] Identification Card - RC";
+		shortDisplayName="RC";
 	};	
 
 	class BSO_System_ids_ARF: JLTS_ids_gar_army
 	{
 		displayName="[SOB] Identification Card - ARF";
+		shortDisplayName="ARF";
 	};
 
 	class BSO_System_ids_ARC: JLTS_ids_gar_army
 	{
 		displayName="[SOB] Identification Card - ARC";
+		shortDisplayName="ARC";
 	};
 
 	class BSO_System_ids_RC_Nexus: JLTS_ids_gar_army
 	{
 		displayName="[SOB] Identification Card - RC Nexus";
+		shortDisplayName="RC_Nexus";
 	};
 
 	class BSO_System_ids_General_Zey: JLTS_ids_gar_army
 	{
 		displayName="[SOB] Identification Card - General Zey";
+		shortDisplayName="General_Zey";
 	};
 
 	class BSO_System_ids_Dark: JLTS_ids_gar_army
 	{
 		displayName="[SOB] Identification Card - Dark";
+		shortDisplayName="Dark";
 	};
 
 	class BSO_System_ids_Henker: JLTS_ids_gar_army
 	{
 		displayName="Identification Card - Henker";
+		shortDisplayName="Henker";
 	};
 };
 

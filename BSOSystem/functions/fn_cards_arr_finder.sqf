@@ -1,24 +1,22 @@
-params ["_arr_suf", "_pl"];
+params [
+    ["_short_name_input", [], [[], ""]],
+    ["_pl", objNull, [objNull]]
+];
 
-_basePrefix = "BSO_System_ids_";
-_arr_cards = getArray (configFile >> "CfgPatches" >> "BSO_System_Main" >> "Cards_ids_arr");
+_short_names = if (_short_name_input isEqualType []) then {
+    _short_name_input
+} else {
+    [_short_name_input]
+};
 
-_ret = false;
+_result = _short_names findIf {
+    _className = BSO_Cards_HashMap getOrDefault [
+        toLower _x,
+        ""
+    ];
 
-{
-    _className = _x;
+    _className != ""
+    && {_className in items player}
+} != -1;
 
-    if (count _className > count _basePrefix) then {
-        
-        _suf = _className select [count _basePrefix];
-
-        if (_arr_suf findIf { _x isEqualTo _suf } != -1) then {
-            
-            if (_className in items _pl) exitWith {
-                _ret = true;
-            };
-        };
-    };
-} forEach _arr_cards;
-
-_ret
+_result
